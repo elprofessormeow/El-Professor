@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sarah's Summer Photos 2026 📸</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #fafaf8;
+      color: #1a1a1a;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #fff;
+      border-bottom: 1px solid #e8e8e4;
+      padding: 18px 28px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    header .avatar {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #f9a8d4, #818cf8);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    header .meta h1 { font-size: 15px; font-weight: 600; }
+    header .meta p  { font-size: 12px; color: #888; margin-top: 1px; }
+    header .share-btn {
+      margin-left: auto;
+      background: none; border: 1.5px solid #d1d5db;
+      border-radius: 8px; padding: 7px 14px;
+      font-size: 13px; cursor: pointer; color: #444;
+      transition: background .15s;
+    }
+    header .share-btn:hover { background: #f3f4f6; }
+
+    .album-info {
+      padding: 28px 28px 12px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .album-info h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .album-info .sub {
+      font-size: 13px; color: #777;
+      display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+    }
+
+    .grid {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 16px 28px 60px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 10px;
+    }
+
+    .photo-card {
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+      aspect-ratio: 1 / 1;
+      background: #e8e8e4;
+      transition: transform .18s, box-shadow .18s;
+    }
+    .photo-card:hover { transform: scale(1.025); box-shadow: 0 8px 24px rgba(0,0,0,.12); }
+    .photo-card:active { transform: scale(.98); }
+
+    .photo-card .thumb {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 52px;
+    }
+    .c1 { background: linear-gradient(135deg, #fde68a, #fb923c, #f43f5e); }
+    .c2 { background: linear-gradient(180deg, #38bdf8, #0ea5e9, #6ee7b7); }
+    .c3 { background: linear-gradient(135deg, #a78bfa, #c084fc, #f472b6); }
+    .c4 { background: linear-gradient(160deg, #86efac, #34d399, #059669); }
+    .c5 { background: linear-gradient(135deg, #fcd34d, #f59e0b, #d97706); }
+    .c6 { background: linear-gradient(180deg, #f0abfc, #e879f9, #a21caf); }
+    .c7 { background: linear-gradient(135deg, #67e8f9, #22d3ee, #0891b2); }
+    .c8 { background: linear-gradient(160deg, #fda4af, #fb7185, #e11d48); }
+    .c9 { background: linear-gradient(135deg, #bbf7d0, #4ade80, #16a34a); }
+
+    .photo-card .label {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: linear-gradient(transparent, rgba(0,0,0,.45));
+      color: #fff;
+      font-size: 11.5px;
+      padding: 18px 10px 8px;
+      font-weight: 500;
+    }
+
+    /* ── Loading overlay (fake) ── */
+    #loading-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.85);
+      z-index: 50;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      color: #fff;
+      font-family: sans-serif;
+    }
+    #loading-overlay.active { display: flex; }
+    .spinner {
+      width: 42px; height: 42px;
+      border: 4px solid rgba(255,255,255,.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Camera overlay ── */
+    #cam-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: #000;
+      z-index: 100;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #cam-overlay.active { display: flex; }
+    #cam-overlay video {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      position: absolute; inset: 0;
+    }
+    .cam-ui {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+      padding-bottom: 48px;
+    }
+    .shutter {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: #fff;
+      border: 5px solid rgba(255,255,255,.4);
+      cursor: pointer;
+      transition: transform .12s;
+    }
+    .shutter:active { transform: scale(.9); }
+    .close-cam {
+      position: fixed; top: 20px; right: 20px;
+      background: rgba(0,0,0,.5); color: #fff;
+      border: none; border-radius: 50%;
+      width: 40px; height: 40px; font-size: 20px;
+      cursor: pointer; z-index: 110;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── Error card inside cam overlay ── */
+    #cam-error {
+      display: none;
+      position: relative; z-index: 2;
+      text-align: center; color: #fff;
+      padding: 32px; font-family: sans-serif;
+    }
+    #cam-error .icon { font-size: 60px; margin-bottom: 14px; }
+    #cam-error h3 { font-size: 18px; font-weight: 600; }
+    #cam-error p  { font-size: 14px; opacity: .7; margin-top: 8px; }
+
+    #flash {
+      pointer-events: none;
+      position: fixed; inset: 0;
+      background: #fff;
+      opacity: 0;
+      z-index: 200;
+      transition: opacity .08s;
+    }
+    #flash.go { opacity: 1; }
+
+    #snap-toast {
+      position: fixed; bottom: 32px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(0,0,0,.75);
+      color: #fff; border-radius: 10px;
+      padding: 10px 18px; font-size: 14px;
+      opacity: 0; transition: opacity .3s, transform .3s;
+      z-index: 300; pointer-events: none;
+    }
+    #snap-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── HTTPS warning banner ── */
+    #https-warn {
+      display: none;
+      background: #fef9c3; border-bottom: 1px solid #fde047;
+      padding: 10px 20px; font-size: 13px; color: #713f12;
+      text-align: center;
+    }
+
+    @media (max-width: 500px) {
+      header { padding: 14px 16px; }
+      .album-info, .grid { padding-left: 14px; padding-right: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="https-warn">
+  ⚠️ <strong>Camera pranks require HTTPS.</strong> Open this file via a web server or hosting service — camera access is blocked on plain <code>file://</code> URLs by browsers.
+  <a href="https://github.com/new" target="_blank" style="margin-left:8px;color:#1d4ed8">Host free on GitHub Pages →</a>
+</div>
+
+<header>
+  <div class="avatar">🌸</div>
+  <div class="meta">
+    <h1>Sarah M.</h1>
+    <p>Shared an album · June 2026</p>
+  </div>
+  <button class="share-btn">⬆ Share</button>
+</header>
+
+<div class="album-info">
+  <h2>☀️ Summer Vibes 2026</h2>
+  <div class="sub">
+    <span>📷 9 photos</span>
+    <span>📍 Various locations</span>
+    <span>🔗 Tap to view full size</span>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="photo-card" onclick="openCamera()"><div class="thumb c1">🏖️</div><div class="label">Beach Day — Malibu</div></div>
+  <div class="photo-card" onclick="openCamera()"><div class="thumb c2">🌊</div><div class="label">Ocean Waves</div></div>
+  <div class="photo-card" onclick="openCamera()"><div class="thumb c3">🌅</div><div class="label">Sunset Hike</div></div>
+  <div class="photo-card" onclick="openCamera()"><div class="thumb c4">🌿</div><div class="label">Forest Trail</div></div>
+  <div class="photo-card" onclick="openCamera()"><div class="thumb c5">🍦</div><div class="label">Ice Cream Run</div></div>
+  <div class="photo-card" onclick="openCamera()"><div class="thumb c6">🌸</div><div class="label">Flower Market</div></div>
+  <div class="photo-card" onclick="openCamera()"><div class="thumb c7">🏊</div><div class="label">Pool Party</div></div>
+  <div class="photo-card" onclick="openCamera()"><div class="thumb c8">🎆</div><div class="label">4th of July</div></div>
+  <div class="photo-card" onclick="openCamera()"><div class="thumb c9">🌲</div><div class="label">Camping Weekend</div></div>
+</div>
+
+<!-- Loading fake -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <div style="font-size:14px;opacity:.8">Loading full photo…</div>
+</div>
+
+<!-- Camera -->
+<div id="cam-overlay">
+  <video id="cam-video" autoplay playsinline muted></video>
+  <div id="cam-error">
+    <div class="icon">📷</div>
+    <h3>Camera access needed</h3>
+    <p>Please allow camera permission<br>to view this photo in full size.</p>
+  </div>
+  <div class="cam-ui" id="cam-controls">
+    <button class="shutter" onclick="snap()"></button>
+  </div>
+</div>
+
+<button class="close-cam" id="close-btn" onclick="closeCamera()" style="display:none;">✕</button>
+
+<div id="flash"></div>
+<div id="snap-toast">📸 Photo taken!</div>
+
+<script>
+  let stream = null;
+
+  // Show warning if running as file://
+  if (location.protocol === 'file:') {
+    document.getElementById('https-warn').style.display = 'block';
+  }
+
+  async function openCamera() {
+    // Check support
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert('Your browser does not support camera access. Try Chrome or Safari on HTTPS.');
+      return;
+    }
+
+    // Show fake loading for realism
+    const loading = document.getElementById('loading-overlay');
+    loading.classList.add('active');
+
+    await new Promise(r => setTimeout(r, 900)); // fake delay
+    loading.classList.remove('active');
+
+    // Open cam overlay
+    document.getElementById('cam-overlay').classList.add('active');
+    document.getElementById('close-btn').style.display = 'flex';
+
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+      document.getElementById('cam-video').srcObject = stream;
+      document.getElementById('cam-error').style.display = 'none';
+      document.getElementById('cam-controls').style.display = 'flex';
+    } catch (err) {
+      // Show error inside the dark overlay
+      document.getElementById('cam-video').style.display = 'none';
+      document.getElementById('cam-error').style.display = 'block';
+      document.getElementById('cam-controls').style.display = 'none';
+      console.warn('Camera error:', err.name, err.message);
+    }
+  }
+
+  function closeCamera() {
+    document.getElementById('cam-overlay').classList.remove('active');
+    document.getElementById('close-btn').style.display = 'none';
+    document.getElementById('cam-video').style.display = '';
+    document.getElementById('cam-error').style.display = 'none';
+    document.getElementById('cam-controls').style.display = 'flex';
+    if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  }
+
+  function snap() {
+    const flash = document.getElementById('flash');
+    flash.classList.add('go');
+    setTimeout(() => flash.classList.remove('go'), 180);
+    const toast = document.getElementById('snap-toast');
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2000);
+  }
+</script>
+</body>
+</html>
